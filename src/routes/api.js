@@ -1,5 +1,5 @@
 import express from "express";
-// import homeController from "../controllers/homeController";
+import userController from "../controllers/userController";
 import apiController from "../controllers/apiController";
 let router = express.Router();
 
@@ -17,6 +17,10 @@ const initApiRoutes = (app) => {
   router.post("/register", apiController.handleRegister);
   router.post("/login", apiController.handleLogin);
 
+  router.get("/user/read", userController.readFunc);
+  router.post("/user/create", userController.createFunc);
+  router.put("/user/update", userController.updateFunc);
+  router.delete("/user/delete", userController.deleteFunc);
   //web bắt đầu sử dụng bằng /
   return app.use("/api/v1/", router);
 };
