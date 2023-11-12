@@ -1,6 +1,7 @@
 import express from "express";
 import userController from "../controllers/userController";
 import apiController from "../controllers/apiController";
+import groupController from "../controllers/groupController";
 let router = express.Router();
 
 const initApiRoutes = (app) => {
@@ -21,6 +22,10 @@ const initApiRoutes = (app) => {
   router.post("/user/create", userController.createFunc);
   router.put("/user/update", userController.updateFunc);
   router.delete("/user/delete", userController.deleteFunc);
+
+  //roter tạo group
+  router.get("/group/read", groupController.readFunc);
+
   //web bắt đầu sử dụng bằng /
   return app.use("/api/v1/", router);
 };

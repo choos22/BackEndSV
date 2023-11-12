@@ -31,7 +31,7 @@ const readFunc = async (req, res) => {
 
 const createFunc = async (req, res) => {
   try {
-    let data = await userApiservice.getAllUser();
+    let data = await userApiservice.createNewUser(req.body);
     return res.status(200).json({
       EM: data.EM, //error message
       EC: data.EC, // error code
@@ -67,11 +67,12 @@ const updateFunc = async (req, res) => {
 
 const deleteFunc = async (req, res) => {
   try {
-    let data = await userApiservice.getAllUser();
+    console.log("req.body", req.body);
+    let data = await userApiservice.deleteUser(req.body.id);
     return res.status(200).json({
-      EM: data.EM, //error message
-      EC: data.EC, // error code
-      DT: data.DT, //data
+      EM: "Delete ok", //error message
+      EC: "0", // error code
+      DT: "", //data
     });
   } catch (error) {
     console.log(error);
