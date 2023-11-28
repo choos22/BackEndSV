@@ -1,10 +1,14 @@
 import db from "../models/index";
-
+import {
+  checkEmailExist,
+  checkPhoneExist,
+  hashUserPassword,
+} from "./loginRegisterServeices";
 const getAllUser = async () => {
   try {
     let users = await db.User.findAll({
       attributes: ["id", "username", "email", "phone", "sex"],
-      include: { model: db.Group, attributes: ["name", "description"] },
+      include: { model: db.Group, attributes: ["name", "description", "id"] },
     });
     if (users) {
       return {
@@ -35,8 +39,9 @@ const getUserWithPagination = async (page, limit) => {
     const { count, rows } = await db.User.findAndCountAll({
       offset: offset,
       limit: limit,
-      attributes: ["id", "username", "email", "phone", "sex"],
-      include: { model: db.Group, attributes: ["name", "description"] },
+      attributes: ["id", "username", "email", "phone", "sex", "address"],
+      include: { model: db.Group, attributes: ["name", "description", "id"] },
+      order: [["id", "DESC"]], //sắp xếp theo bảng chữ cái
     });
 
     let totalPages = Math.ceil(count / limit);
@@ -62,7 +67,26 @@ const getUserWithPagination = async (page, limit) => {
 
 const createNewUser = async (data) => {
   try {
-    await db.User.create(data);
+    //check email, phone
+    let isEmailExist = await checkEmailExist(data.email);
+    if (isEmailExist === true) {
+      return {
+        EM: " The email is already exist",
+        EC: 1,
+        DT: "email",
+      };
+    }
+
+    let isPhoneExist = await checkPhoneExist(data.phone);
+    if (isPhoneExist === true) {
+      return {
+        EM: " The phone is ready",
+        EC: 1,
+        DT: "phone",
+      };
+    }
+    let hashPass = hashUserPassword(data.password);
+    await db.User.create({ ...data, password: hashPass });
     return {
       EM: "create ok",
       EC: 0,
@@ -74,15 +98,45 @@ const createNewUser = async (data) => {
 };
 const updateUser = async (data) => {
   try {
+    if (!data.groupId) {
+      return {
+        EM: "Error with empty GroupId", //error message
+        EC: 1, // error code
+        DT: "group", //data
+      };
+    }
+
     let user = await db.User.findOne({
-      where: { id: data },
+      where: { id: data.id },
     });
     if (user) {
-      user.update({});
+      //update
+      await user.update({
+        username: data.username,
+        address: data.address,
+        sex: data.sex,
+        groupId: data.groupId,
+      });
+
+      return {
+        EM: "Update user succeeds", //error message
+        EC: 2, // error code
+        DT: "", //data
+      };
     } else {
+      return {
+        EM: "User not found", //error message
+        EC: 2, // error code
+        DT: "", //data
+      };
     }
   } catch (error) {
     console.log(error);
+    return {
+      EM: "something wrongs with services", //error message
+      EC: 1, // error code
+      DT: [], //data
+    };
   }
 };
 const deleteUser = async (id) => {

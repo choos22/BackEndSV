@@ -1,9 +1,15 @@
+require("dotenv").config();
 import db from "../models/index";
 import bcrypt from "bcryptjs/dist/bcrypt";
 import { Op } from "sequelize";
+import { getGroupWithRole } from "./JWTSetvice";
+
+import { createJWT } from "../middleware/JWTActions";
+
 const saltRounds = 10;
 
 const salt = bcrypt.genSaltSync(saltRounds);
+
 const hashUserPassword = (userPassword) => {
   let hashPassword = bcrypt.hashSync(userPassword, salt);
   console.log("check pá", hashPassword);
@@ -36,15 +42,15 @@ const registerNewUser = async (rawUserData) => {
     let isEmailExist = await checkEmailExist(rawUserData.email);
     if (isEmailExist === true) {
       return {
-        EM: " The email is ready",
+        EM: " The email is already exist",
         EC: 1,
       };
     }
 
-    let isPhoneExist = await checkPhoneExist(rawUserData.email);
+    let isPhoneExist = await checkPhoneExist(rawUserData.phone);
     if (isPhoneExist === true) {
       return {
-        EM: " The phone is ready",
+        EM: " The phone is already exist",
         EC: 1,
       };
     }
@@ -56,16 +62,17 @@ const registerNewUser = async (rawUserData) => {
       username: rawUserData.username,
       password: hashPass,
       phone: rawUserData.phone,
+      groupId: 4,
     });
 
     return {
-      EM: " ok",
+      EM: "A user is create successfully!",
       EC: 0,
     };
   } catch (error) {
     return {
-      EM: " saiiiiiiiiii",
-      EC: -1,
+      EM: " Somthings wrongs in service...",
+      EC: -2,
     };
   }
 };
@@ -86,10 +93,22 @@ const handleUserLogin = async (rawData) => {
       console.log("tim dc r");
       let isCorrectPass = checkPass(rawData.password, user.password);
       if (isCorrectPass === true) {
+        // let token;
+        let groupWithRoles = await getGroupWithRole(user);
+        let payload = {
+          email: user.email,
+          groupWithRoles,
+          expiresIn: process.env.JWT_EXPIRES_IN,
+        };
+
+        let token = createJWT(payload);
         return {
           EM: " ok",
           EC: 0,
-          DT: "",
+          DT: {
+            access_token: token,
+            data: groupWithRoles,
+          },
         };
       }
     }
@@ -103,7 +122,7 @@ const handleUserLogin = async (rawData) => {
   } catch (error) {
     console.log(error);
     return {
-      EM: " something wrongs in servicec...",
+      EM: " Somethings wrongs in services...",
       EC: -2,
     };
   }
@@ -112,4 +131,7 @@ const handleUserLogin = async (rawData) => {
 module.exports = {
   registerNewUser,
   handleUserLogin,
+  hashUserPassword,
+  checkEmailExist,
+  checkPhoneExist,
 };
